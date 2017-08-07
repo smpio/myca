@@ -17,6 +17,7 @@ class CertData:
 def issue_certificate(data, ca_pair=None):
     key = rsa.generate_private_key(public_exponent=data.key_public_exponent, key_size=data.key_size,
                                    backend=default_backend())
+    key_id = x509.SubjectKeyIdentifier.from_public_key(key.public_key())
 
     subj_name_attrs = [x509.NameAttribute(NameOID.COMMON_NAME, data.subj_cn)]
     if data.subj_c:
@@ -38,6 +39,7 @@ def issue_certificate(data, ca_pair=None):
     cert = x509.CertificateBuilder() \
         .subject_name(subject) \
         .public_key(key.public_key()) \
+        .add_extension(key_id, critical=False) \
         .serial_number(sn) \
         .not_valid_before(data.cert_validate_since) \
         .not_valid_after(data.cert_validate_till)
@@ -57,50 +59,36 @@ def issue_certificate(data, ca_pair=None):
 
     if ca_pair:
         ca_cert, ca_key = ca_pair
-
         ca_cert = x509.load_pem_x509_certificate(ca_cert, default_backend())
         ca_key = serialization.load_pem_private_key(ca_key, password=None, backend=default_backend())
         ca_key_id = x509.SubjectKeyIdentifier.from_public_key(ca_key.public_key())
-
-        cert = cert \
-            .issuer_name(ca_cert.issuer) \
-            .add_extension(x509.AuthorityKeyIdentifier(ca_key_id.digest,
-                                                       [x509.DirectoryName(ca_cert.issuer)],
-                                                       ca_cert.serial_number),
-                           critical=False) \
-            .add_extension(x509.KeyUsage(digital_signature=True,
-                                         content_commitment=False,
-                                         key_encipherment=True,
-                                         data_encipherment=False,
-                                         key_agreement=False,
-                                         key_cert_sign=False,
-                                         crl_sign=False,
-                                         encipher_only=False,
-                                         decipher_only=False),
-                           critical=True) \
-            .sign(ca_key, hashes.SHA256(), default_backend())
+        ca_subject = ca_cert.subject
+        ca_sn = ca_cert.serial_number
     else:
-        key_id = x509.SubjectKeyIdentifier.from_public_key(key.public_key())
+        cert = cert.add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
+        ca_cert = cert
+        ca_key = key
+        ca_key_id = key_id
+        ca_subject = subject
+        ca_sn = sn
 
-        cert = cert \
-            .issuer_name(subject) \
-            .add_extension(key_id, critical=False) \
-            .add_extension(x509.AuthorityKeyIdentifier(key_id.digest,
-                                                       [x509.DirectoryName(subject)],
-                                                       sn),
-                           critical=False) \
-            .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True) \
-            .add_extension(x509.KeyUsage(digital_signature=True,
-                                         content_commitment=False,
-                                         key_encipherment=False,
-                                         data_encipherment=False,
-                                         key_agreement=False,
-                                         key_cert_sign=True,
-                                         crl_sign=True,
-                                         encipher_only=False,
-                                         decipher_only=False),
-                           critical=True) \
-            .sign(key, hashes.SHA256(), default_backend())
+    cert = cert \
+        .issuer_name(ca_subject) \
+        .add_extension(x509.AuthorityKeyIdentifier(ca_key_id.digest,
+                                                   [x509.DirectoryName(ca_subject)],
+                                                   ca_sn),
+                       critical=False) \
+        .add_extension(x509.KeyUsage(digital_signature=True,
+                                     content_commitment=False,
+                                     key_encipherment=bool(ca_pair),
+                                     data_encipherment=False,
+                                     key_agreement=False,
+                                     key_cert_sign=not bool(ca_pair),
+                                     crl_sign=not bool(ca_pair),
+                                     encipher_only=False,
+                                     decipher_only=False),
+                       critical=True) \
+        .sign(ca_key, hashes.SHA256(), default_backend())
 
     cert = cert.public_bytes(serialization.Encoding.PEM)
     key = key.private_bytes(encoding=serialization.Encoding.PEM,
