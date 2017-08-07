@@ -1,4 +1,5 @@
 import copy
+import datetime
 import ipaddress
 import subprocess
 
@@ -111,7 +112,7 @@ def get_certificate_text(cert_data):
                           input=cert_data).stdout.decode('ascii')
 
 
-def load_certificate_data(pair):
+def load_certificate_data(pair, reissue=False):
     cert = x509.load_pem_x509_certificate(pair[0], default_backend())
     key = serialization.load_pem_private_key(pair[1], password=None, backend=default_backend())
     public_key = key.public_key()
@@ -144,6 +145,11 @@ def load_certificate_data(pair):
 
     data.cert_validate_since = cert.not_valid_before
     data.cert_validate_till = cert.not_valid_after
+
+    if reissue:
+        valid_period = data.cert_validate_till - data.cert_validate_since
+        data.cert_validate_since = datetime.datetime.now()
+        data.cert_validate_till = data.cert_validate_since + valid_period
 
     try:
         ext_key_usage = cert.extensions.get_extension_for_oid(ExtensionOID.EXTENDED_KEY_USAGE).value

@@ -124,12 +124,9 @@ class IdentityView(ModelView):
         form = super().edit_form(obj)
 
         if obj:
-            data = x509.load_certificate_data(obj.pair.as_tuple)
+            data = x509.load_certificate_data(obj.pair.as_tuple, reissue=True)
 
             for k, v in data.as_dict().items():
-                if k in ('cert_validate_since', 'cert_validate_till'):
-                    continue
-
                 field = form[k]
 
                 if not isinstance(field, fields.FieldList):
