@@ -57,7 +57,7 @@ class IdentityView(ModelView):
 
         'san_ips': InlineFieldList(fields.StringField('IP', [validators.IPAddress()]),
                                    'IP', description='IP address'),
-        'san_dns_names': InlineFieldList(fields.StringField('DNS', [validators.HostnameValidation()]),
+        'san_dns_names': InlineFieldList(fields.StringField('DNS'),
                                          'DNS', description='DNS names'),
 
         'ku_web_server_auth': fields.BooleanField('Web server auth', description='TLS Web Server Authentication'),
@@ -119,3 +119,16 @@ class IdentityView(ModelView):
     @expose('/history/')
     def history_view(self):
         pass
+
+    def edit_form(self, obj=None):
+        form = super().edit_form(obj)
+        if obj:
+            data = x509.load_certificate_data(obj.pair.as_tuple)
+            for k, v in data.as_dict().items():
+                field = form[k]
+                if not isinstance(field, fields.FieldList):
+                    field.data = v
+                else:
+                    for v in v:
+                        field.append_entry(v)
+        return form

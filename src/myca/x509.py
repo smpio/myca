@@ -1,8 +1,9 @@
+import copy
 import ipaddress
 import subprocess
 
 from cryptography import x509
-from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
+from cryptography.x509.oid import NameOID, ExtensionOID, ExtendedKeyUsageOID
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
@@ -10,8 +11,12 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 
 
 class CertData:
-    def __init__(self, data):
-        self.__dict__.update(data)
+    def __init__(self, data=None):
+        if data is not None:
+            self.__dict__.update(data)
+
+    def as_dict(self):
+        return copy.copy(self.__dict__)
 
 
 def issue_certificate(data, ca_pair=None):
@@ -104,3 +109,56 @@ def get_certificate_text(cert_data):
                           check=True,
                           stdout=subprocess.PIPE,
                           input=cert_data).stdout.decode('ascii')
+
+
+def load_certificate_data(pair):
+    cert = x509.load_pem_x509_certificate(pair[0], default_backend())
+    key = serialization.load_pem_private_key(pair[1], password=None, backend=default_backend())
+    public_key = key.public_key()
+
+    data = CertData()
+    data.key_size = key.key_size
+    data.key_public_exponent = public_key.public_numbers().e
+
+    v = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+    if v:
+        data.subj_cn = v[0].value
+    v = cert.subject.get_attributes_for_oid(NameOID.COUNTRY_NAME)
+    if v:
+        data.subj_c = v[0].value
+    v = cert.subject.get_attributes_for_oid(NameOID.ORGANIZATION_NAME)
+    if v:
+        data.subj_o = v[0].value
+    v = cert.subject.get_attributes_for_oid(NameOID.ORGANIZATIONAL_UNIT_NAME)
+    if v:
+        data.subj_ou = v[0].value
+    v = cert.subject.get_attributes_for_oid(NameOID.DN_QUALIFIER)
+    if v:
+        data.subj_dnq = v[0].value
+    v = cert.subject.get_attributes_for_oid(NameOID.STATE_OR_PROVINCE_NAME)
+    if v:
+        data.subj_st = v[0].value
+    v = cert.subject.get_attributes_for_oid(NameOID.SERIAL_NUMBER)
+    if v:
+        data.subj_sn = v[0].value
+
+    data.cert_validate_since = cert.not_valid_before
+    data.cert_validate_till = cert.not_valid_after
+
+    try:
+        ext_key_usage = cert.extensions.get_extension_for_oid(ExtensionOID.EXTENDED_KEY_USAGE).value
+    except x509.extensions.ExtensionNotFound:
+        pass
+    else:
+        data.ku_web_server_auth = ExtendedKeyUsageOID.SERVER_AUTH in ext_key_usage
+        data.ku_web_client_auth = ExtendedKeyUsageOID.CLIENT_AUTH in ext_key_usage
+
+    try:
+        alt_names = cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME).value
+    except x509.extensions.ExtensionNotFound:
+        pass
+    else:
+        data.san_dns_names = alt_names.get_values_for_type(x509.DNSName)
+        data.san_ips = alt_names.get_values_for_type(x509.IPAddress)
+
+    return data
