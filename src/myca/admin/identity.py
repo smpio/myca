@@ -1,7 +1,9 @@
 import datetime
 
+from flask import request, flash, redirect
 from flask_admin import expose
 from flask_admin.form import rules
+from flask_admin.helpers import get_redirect_target
 from flask_admin.model.template import macro
 from flask_admin.model.fields import InlineFieldList
 from wtforms import fields
@@ -112,9 +114,21 @@ class IdentityView(ModelView):
         model.pair = pair
         model.name = data.subj_cn
 
-    @expose('/reissue/')
+    @expose('/reissue/', methods=['POST'])
     def reissue_view(self):
-        pass
+        model = self.get_one(request.values.get('id'))
+        data = x509.load_certificate_data(model.pair.as_tuple, reissue=True)
+
+        if model.issuer:
+            pair = models.Pair(*x509.issue_certificate(data, model.issuer.pair.as_tuple))
+        else:
+            pair = models.Pair(*x509.issue_certificate(data))
+
+        model.pair = pair
+
+        return_url = get_redirect_target() or self.get_url('.index_view')
+        flash('The identity certificate was successfully reissued', 'success')
+        return redirect(return_url)
 
     @expose('/history/')
     def history_view(self):

@@ -13,6 +13,22 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 
 class CertData:
     def __init__(self, data=None):
+        self.key_size = None
+        self.key_public_exponent = None
+        self.subj_cn = None
+        self.subj_c = None
+        self.subj_o = None
+        self.subj_ou = None
+        self.subj_dnq = None
+        self.subj_st = None
+        self.subj_sn = None
+        self.cert_validate_since = None
+        self.cert_validate_till = None
+        self.ku_web_server_auth = None
+        self.ku_web_client_auth = None
+        self.san_dns_names = []
+        self.san_ips = []
+
         if data is not None:
             self.__dict__.update(data)
 
