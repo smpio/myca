@@ -122,13 +122,20 @@ class IdentityView(ModelView):
 
     def edit_form(self, obj=None):
         form = super().edit_form(obj)
+
         if obj:
             data = x509.load_certificate_data(obj.pair.as_tuple)
+
             for k, v in data.as_dict().items():
+                if k in ('cert_validate_since', 'cert_validate_till'):
+                    continue
+
                 field = form[k]
+
                 if not isinstance(field, fields.FieldList):
                     field.data = v
                 else:
                     for v in v:
                         field.append_entry(v)
+
         return form
