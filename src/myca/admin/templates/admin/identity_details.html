@@ -1,0 +1,12 @@
+{% extends 'admin/model/details.html' %}
+
+{% block details_search %}
+{% endblock %}
+
+{% block details_table %}
+<h3>Certificate</h3>
+<pre>{{ model.pair.cert_text }}</pre>
+
+<h3>Private key</h3>
+<pre>{{ model.pair.key_str }}</pre>
+{% endblock %}

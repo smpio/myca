@@ -1,0 +1,21 @@
+---
+version: '2'
+
+services:
+  myca:
+    image: smpio/myca
+    build: ./src/
+    command: runserver --host 0.0.0.0 --port 5000 --debug
+#    environment:
+#    - DATABASE_URI=postgres://postgres@postgres:5432/postgres
+    ports:
+    - '5000:5000'
+    volumes:
+    - './src:/usr/src/app'
+    depends_on:
+    - postgres
+
+  postgres:
+    image: postgres:9.6
+    ports:
+    - '5432:5432'

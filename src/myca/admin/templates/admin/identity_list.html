@@ -1,0 +1,21 @@
+{% extends 'admin/model/list.html' %}
+
+{% block list_row_actions scoped %}
+    {{ super() }}
+
+    <form class="icon" method="POST" action="{{ url_for('identity.reissue_view') }}">
+        <input id="id" name="id" type="hidden" value="{{ row.id }}">
+        <input id="url" name="url" type="hidden" value="{{ return_url }}">
+
+        <button onclick="return safeConfirm('Are you sure you want to reissue a certificate for this identity?');" title="Reissue certificate">
+            <span class="fa fa-refresh glyphicon glyphicon-refresh"></span>
+        </button>
+    </form>
+
+    <a class="icon" href="{{ url_for('identity.history_view', id=row.id, url=return_url) }}" title="Certificate history">
+        <span class="fa fa-list glyphicon glyphicon-list"></span>
+    </a>
+{% endblock %}
+
+{% macro render_status(model, column) %}
+{% endmacro %}
