@@ -31,7 +31,6 @@ class IdentityView(ModelView):
         'status',
     ]
     list_template = 'admin/identity_list.html'
-    details_template = 'admin/identity_details.html'
     column_formatters = {
         'status': macro('render_status'),
     }
@@ -130,10 +129,6 @@ class IdentityView(ModelView):
         flash('The identity certificate was successfully reissued', 'success')
         return redirect(return_url)
 
-    @expose('/history/')
-    def history_view(self):
-        pass
-
     def edit_form(self, obj=None):
         form = super().edit_form(obj)
 
@@ -150,3 +145,9 @@ class IdentityView(ModelView):
                         field.append_entry(v)
 
         return form
+
+    @expose('/details/')
+    def details_view(self):
+        model = self.get_one(request.values.get('id'))
+        return_url = get_redirect_target() or self.get_url('.index_view')
+        return redirect(self.get_url('pair.details_view', id=model.pair.id, return_url=return_url))

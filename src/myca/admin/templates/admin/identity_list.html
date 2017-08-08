@@ -12,7 +12,7 @@
         </button>
     </form>
 
-    <a class="icon" href="{{ url_for('identity.history_view', id=row.id, url=return_url) }}" title="Certificate history">
+    <a class="icon" href="{{ url_for('pair.index_view', identity_id=row.id) }}" title="Certificate history">
         <span class="fa fa-list glyphicon glyphicon-list"></span>
     </a>
 {% endblock %}
