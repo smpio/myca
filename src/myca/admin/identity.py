@@ -71,7 +71,7 @@ class IdentityView(ModelView):
         'ku_web_server_auth': fields.BooleanField('Web server auth', description='TLS Web Server Authentication'),
         'ku_web_client_auth': fields.BooleanField('Web client auth', description='TLS Web Client Authentication'),
 
-        'key_size': fields.IntegerField('Size', default=4096),
+        'key_size': fields.IntegerField('Size', default=2048),
         'key_public_exponent': fields.IntegerField('Public exponent', default=65537),
     }
 
