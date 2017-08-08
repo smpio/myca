@@ -150,4 +150,4 @@ class IdentityView(ModelView):
     def details_view(self):
         model = self.get_one(request.values.get('id'))
         return_url = get_redirect_target() or self.get_url('.index_view')
-        return redirect(self.get_url('pair.details_view', id=model.pair.id, return_url=return_url))
+        return redirect(self.get_url('pair.details_view', id=model.pair.id, url=return_url))
