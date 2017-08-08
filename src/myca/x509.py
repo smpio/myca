@@ -30,6 +30,7 @@ class CertInfo:
         self.san_dns_names = []
         self.san_ips = []
         self.issuer_cn = None
+        self.self_signed = None
 
         if data is not None:
             self.__dict__.update(data)
@@ -164,6 +165,8 @@ def load_certificate_info(pair, reissue=False):
     v = cert.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)
     if v:
         info.issuer_cn = v[0].value
+
+    info.self_signed = cert.subject == cert.issuer
 
     info.cert_validate_since = cert.not_valid_before
     info.cert_validate_till = cert.not_valid_after

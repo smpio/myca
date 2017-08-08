@@ -9,6 +9,7 @@ from flask_admin.model.fields import InlineFieldList
 import wtforms
 from wtforms import fields
 from wtforms import validators
+from sqlalchemy.exc import IntegrityError
 
 from myca import x509, models
 from .base import ModelView
@@ -170,7 +171,7 @@ class IdentityView(ModelView):
             identity = models.Identity()
             identity.name = info.subj_cn
 
-            if info.issuer_cn:
+            if not info.self_signed:
                 def find_issuer():
                     for issuer in models.Identity.query.filter_by(name=info.issuer_cn):
                         cert_chain = issuer.get_cert_chain()
@@ -190,7 +191,13 @@ class IdentityView(ModelView):
             pair = models.Pair(*pair_tuple)
             pair.identity = identity
             self.session.add(pair)
-            self.session.commit()
+
+            try:
+                self.session.commit()
+            except IntegrityError:
+                flash('Failed to import identity: identity with same name already exists.', 'error')
+                return redirect(return_url)
+
             flash('Identity was successfully imported.', 'success')
             return redirect(self.get_save_return_url(identity, is_created=True))
 
