@@ -1,5 +1,11 @@
 {% extends 'admin/model/list.html' %}
 
+{% block model_menu_bar_after_filters %}
+    <li>
+        <a href="{{ get_url('.import_view', url=return_url) }}" title="Import a new identity">Import</a>
+    </li>
+{% endblock %}
+
 {% block list_row_actions scoped %}
     {{ super() }}
 

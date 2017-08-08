@@ -34,14 +34,20 @@ class Identity(db.Model):
 
     @property
     def pair_error(self):
+        cert_chain = self.get_cert_chain()[1:]
+        if not cert_chain:
+            return
         try:
-            ca_cert_chain_data = []
-            issuer = self.issuer
-            while issuer:
-                ca_cert_chain_data.append(issuer.pair.cert)
-                issuer = issuer.issuer
-            if not ca_cert_chain_data:
-                return
-            x509.verify_certificate_chain(self.pair.cert, ca_cert_chain_data)
+            x509.verify_certificate_chain(self.pair.cert, cert_chain)
         except x509.InvalidCertificate as e:
             return str(e)
+
+    def get_cert_chain(self):
+        chain = []
+
+        issuer = self
+        while issuer:
+            chain.append(issuer.pair.cert)
+            issuer = issuer.issuer
+
+        return chain

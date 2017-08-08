@@ -3,9 +3,10 @@ import datetime
 from flask import request, flash, redirect
 from flask_admin import expose
 from flask_admin.form import rules
-from flask_admin.helpers import get_redirect_target
+from flask_admin.helpers import get_redirect_target, get_form_data
 from flask_admin.model.template import macro
 from flask_admin.model.fields import InlineFieldList
+import wtforms
 from wtforms import fields
 from wtforms import validators
 
@@ -22,6 +23,11 @@ def default_since():
 def default_till():
     since = default_since()
     return since.replace(year=since.year + 1)
+
+
+class ImportForm(wtforms.Form):
+    cert = fields.TextAreaField('Certificate PEM data', validators=required)
+    key = fields.TextAreaField('Private key PEM data', validators=required)
 
 
 class IdentityView(ModelView):
@@ -151,3 +157,43 @@ class IdentityView(ModelView):
         model = self.get_one(request.values.get('id'))
         return_url = get_redirect_target() or self.get_url('.index_view')
         return redirect(self.get_url('pair.details_view', id=model.pair.id, url=return_url))
+
+    @expose('/import/', methods=['GET', 'POST'])
+    def import_view(self):
+        return_url = get_redirect_target() or self.get_url('.index_view')
+        form = ImportForm(get_form_data())
+
+        if self.validate_form(form):
+            pair_tuple = form.data['cert'].encode('ascii'), form.data['key'].encode('ascii')
+            cert_info = x509.load_certificate_data(pair_tuple)
+
+            identity = models.Identity()
+            identity.name = cert_info.subj_cn
+
+            if cert_info.issuer_cn:
+                def find_issuer():
+                    for issuer in models.Identity.query.filter_by(name=cert_info.issuer_cn):
+                        cert_chain = issuer.get_cert_chain()
+                        try:
+                            x509.verify_certificate_chain(pair_tuple[0], cert_chain)
+                        except x509.InvalidCertificate:
+                            pass
+                        else:
+                            return issuer
+
+                identity.issuer = find_issuer()
+                if not identity.issuer:
+                    flash('Failed to import identity: issuer identity not found.', 'error')
+                    return redirect(return_url)
+
+            self.session.add(identity)
+            pair = models.Pair(*pair_tuple)
+            pair.identity = identity
+            self.session.add(pair)
+            self.session.commit()
+            flash('Identity was successfully imported.', 'success')
+            return redirect(self.get_save_return_url(identity, is_created=True))
+
+        return self.render('admin/identity_import.html',
+                           form=form,
+                           return_url=return_url)

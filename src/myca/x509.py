@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 
+# TODO: rename to CertInfo
 class CertData:
     def __init__(self, data=None):
         self.key_size = None
@@ -29,6 +30,7 @@ class CertData:
         self.ku_web_client_auth = None
         self.san_dns_names = []
         self.san_ips = []
+        self.issuer_cn = None
 
         if data is not None:
             self.__dict__.update(data)
@@ -129,6 +131,7 @@ def get_certificate_text(cert_data):
                           input=cert_data).stdout.decode('ascii')
 
 
+# TODO: rename to load_certificate_info
 def load_certificate_data(pair, reissue=False):
     cert = x509.load_pem_x509_certificate(pair[0], default_backend())
     key = serialization.load_pem_private_key(pair[1], password=None, backend=default_backend())
@@ -159,6 +162,10 @@ def load_certificate_data(pair, reissue=False):
     v = cert.subject.get_attributes_for_oid(NameOID.SERIAL_NUMBER)
     if v:
         data.subj_sn = v[0].value
+
+    v = cert.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)
+    if v:
+        data.issuer_cn = v[0].value
 
     data.cert_validate_since = cert.not_valid_before
     data.cert_validate_till = cert.not_valid_after
