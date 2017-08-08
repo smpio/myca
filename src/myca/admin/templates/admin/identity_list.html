@@ -18,4 +18,10 @@
 {% endblock %}
 
 {% macro render_status(model, column) %}
+    {% set pair_error=model.pair_error %}
+    {% if pair_error %}
+        <span class="glyphicon glyphicon-exclamation-sign text-danger" title="Error"></span> {{ pair_error }}
+    {% else %}
+        OK
+    {% endif %}
 {% endmacro %}

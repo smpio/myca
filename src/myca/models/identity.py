@@ -1,5 +1,6 @@
 from sqlalchemy.schema import UniqueConstraint
 
+from myca import x509
 from .db import db
 
 
@@ -30,3 +31,17 @@ class Identity(db.Model):
     def pair(self, pair):
         pair.identity = self
         db.session.add(pair)
+
+    @property
+    def pair_error(self):
+        try:
+            ca_cert_chain_data = []
+            issuer = self.issuer
+            while issuer:
+                ca_cert_chain_data.append(issuer.pair.cert)
+                issuer = issuer.issuer
+            if not ca_cert_chain_data:
+                return
+            x509.verify_certificate_chain(self.pair.cert, ca_cert_chain_data)
+        except x509.InvalidCertificate as e:
+            return str(e)

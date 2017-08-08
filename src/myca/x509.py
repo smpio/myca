@@ -3,6 +3,7 @@ import datetime
 import ipaddress
 import subprocess
 
+from OpenSSL import crypto
 from cryptography import x509
 from cryptography.x509.oid import NameOID, ExtensionOID, ExtendedKeyUsageOID
 from cryptography.hazmat.backends import default_backend
@@ -184,3 +185,24 @@ def load_certificate_data(pair, reissue=False):
         data.san_ips = alt_names.get_values_for_type(x509.IPAddress)
 
     return data
+
+
+def verify_certificate_chain(cert_data, ca_cert_chain_data=()):
+    try:
+        store = crypto.X509Store()
+
+        for ca_cert_data in ca_cert_chain_data:
+            ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, ca_cert_data)
+            store.add_cert(ca_cert)
+
+        cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_data)
+        store_ctx = crypto.X509StoreContext(store, cert)
+        store_ctx.verify_certificate()
+    except crypto.Error as e:
+        raise InvalidCertificate('Broken certificate') from e
+    except crypto.X509StoreContextError as e:
+        raise InvalidCertificate('Invalid certificate chain: ' + str(e)) from e
+
+
+class InvalidCertificate(Exception):
+    pass
