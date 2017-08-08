@@ -1,0 +1,14 @@
+{% extends 'admin/model/list.html' %}
+
+{% block list_row_actions scoped %}
+    {{ super() }}
+
+    <form class="icon" method="POST" action="{{ url_for('pair.revert_view') }}">
+        <input id="id" name="id" type="hidden" value="{{ row.id }}">
+        <input id="url" name="url" type="hidden" value="{{ return_url }}">
+
+        <button onclick="return safeConfirm('Are you sure you want to revert the certificate to this version?');" title="Revert here">
+            <span class="fa fa-undo glyphicon glyphicon-repeat"></span>
+        </button>
+    </form>
+{% endblock %}
