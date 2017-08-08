@@ -34,9 +34,11 @@ class Identity(db.Model):
 
     @property
     def pair_error(self):
-        cert_chain = self.get_cert_chain()[1:]
-        if not cert_chain:
-            return
+        cert_chain = self.get_cert_chain()
+
+        if len(cert_chain) > 1:
+            cert_chain = cert_chain[1:]
+
         try:
             x509.verify_certificate_chain(self.pair.cert, cert_chain)
         except x509.InvalidCertificate as e:
