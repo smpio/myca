@@ -132,6 +132,7 @@ class IdentityView(ModelView):
 
         model.pair = pair
 
+        self.session.commit()
         return_url = get_redirect_target() or self.get_url('.index_view')
         flash('The identity certificate was successfully reissued', 'success')
         return redirect(return_url)
