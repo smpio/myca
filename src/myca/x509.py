@@ -29,6 +29,7 @@ class CertInfo:
         self.ku_web_client_auth = None
         self.san_dns_names = []
         self.san_ips = []
+        self.issuer = None
         self.issuer_cn = None
         self.self_signed = None
 
