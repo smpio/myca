@@ -109,7 +109,7 @@ class IdentityView(ModelView):
             return super().create_model(*args, **kwargs)
 
     def on_model_change(self, form, model, is_created):
-        data = x509.CertData(form.data)
+        data = x509.CertInfo(form.data)
 
         if data.issuer:
             pair = models.Pair(*x509.issue_certificate(data, data.issuer.pair.as_tuple))
@@ -122,12 +122,12 @@ class IdentityView(ModelView):
     @expose('/reissue/', methods=['POST'])
     def reissue_view(self):
         model = self.get_one(request.values.get('id'))
-        data = x509.load_certificate_data(model.pair.as_tuple, reissue=True)
+        info = x509.load_certificate_info(model.pair.as_tuple, reissue=True)
 
         if model.issuer:
-            pair = models.Pair(*x509.issue_certificate(data, model.issuer.pair.as_tuple))
+            pair = models.Pair(*x509.issue_certificate(info, model.issuer.pair.as_tuple))
         else:
-            pair = models.Pair(*x509.issue_certificate(data))
+            pair = models.Pair(*x509.issue_certificate(info))
 
         model.pair = pair
 
@@ -139,9 +139,9 @@ class IdentityView(ModelView):
         form = super().edit_form(obj)
 
         if obj:
-            data = x509.load_certificate_data(obj.pair.as_tuple, reissue=True)
+            info = x509.load_certificate_info(obj.pair.as_tuple, reissue=True)
 
-            for k, v in data.as_dict().items():
+            for k, v in info.as_dict().items():
                 field = form[k]
 
                 if not isinstance(field, fields.FieldList):
@@ -165,14 +165,14 @@ class IdentityView(ModelView):
 
         if self.validate_form(form):
             pair_tuple = form.data['cert'].encode('ascii'), form.data['key'].encode('ascii')
-            cert_info = x509.load_certificate_data(pair_tuple)
+            info = x509.load_certificate_info(pair_tuple)
 
             identity = models.Identity()
-            identity.name = cert_info.subj_cn
+            identity.name = info.subj_cn
 
-            if cert_info.issuer_cn:
+            if info.issuer_cn:
                 def find_issuer():
-                    for issuer in models.Identity.query.filter_by(name=cert_info.issuer_cn):
+                    for issuer in models.Identity.query.filter_by(name=info.issuer_cn):
                         cert_chain = issuer.get_cert_chain()
                         try:
                             x509.verify_certificate_chain(pair_tuple[0], cert_chain)
