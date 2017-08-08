@@ -173,7 +173,7 @@ def load_certificate_info(pair, reissue=False):
 
     if reissue:
         valid_period = info.cert_validate_till - info.cert_validate_since
-        info.cert_validate_since = datetime.datetime.now()
+        info.cert_validate_since = datetime.datetime.utcnow()
         info.cert_validate_till = info.cert_validate_since + valid_period
 
     try:

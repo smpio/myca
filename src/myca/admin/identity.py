@@ -18,7 +18,7 @@ required = [validators.DataRequired()]
 
 
 def default_since():
-    return datetime.datetime.now()
+    return datetime.datetime.utcnow()
 
 
 def default_till():
@@ -143,6 +143,9 @@ class IdentityView(ModelView):
             info = x509.load_certificate_info(obj.pair.as_tuple, reissue=True)
 
             for k, v in info.as_dict().items():
+                if k not in form:
+                    continue
+
                 field = form[k]
 
                 if not isinstance(field, fields.FieldList):
