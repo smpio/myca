@@ -212,5 +212,13 @@ def verify_certificate_chain(cert_data, ca_cert_chain_data=()):
         raise InvalidCertificate('Invalid certificate chain: ' + str(e)) from e
 
 
+def does_keys_match(pair):
+    cert = x509.load_pem_x509_certificate(pair[0], default_backend())
+    key = serialization.load_pem_private_key(pair[1], password=None, backend=default_backend())
+    key1 = cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+    key2 = key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+    return key1 == key2
+
+
 class InvalidCertificate(Exception):
     pass

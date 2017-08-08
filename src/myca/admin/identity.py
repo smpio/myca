@@ -168,6 +168,10 @@ class IdentityView(ModelView):
             pair_tuple = form.data['cert'].encode('ascii'), form.data['key'].encode('ascii')
             info = x509.load_certificate_info(pair_tuple)
 
+            if not x509.does_keys_match(pair_tuple):
+                flash('Failed to import identity: keys does not match.', 'error')
+                return redirect(return_url)
+
             identity = models.Identity()
             identity.name = info.subj_cn
 
