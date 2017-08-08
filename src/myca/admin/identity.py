@@ -137,24 +137,12 @@ class IdentityView(ModelView):
         return redirect(return_url)
 
     def edit_form(self, obj=None):
-        form = super().edit_form(obj)
-
         if obj:
             info = x509.load_certificate_info(obj.pair.as_tuple, reissue=True)
-
             for k, v in info.as_dict().items():
-                if k not in form:
-                    continue
-
-                field = form[k]
-
-                if not isinstance(field, fields.FieldList):
-                    field.data = v
-                else:
-                    for v in v:
-                        field.append_entry(v)
-
-        return form
+                if not hasattr(obj, k):
+                    setattr(obj, k, v)
+        return super().edit_form(obj)
 
     @expose('/details/')
     def details_view(self):
