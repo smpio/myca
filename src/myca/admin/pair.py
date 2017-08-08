@@ -13,6 +13,7 @@ class PairView(ModelView):
 
     column_list = ['issued_at']
     column_filters = ['identity_id']
+    column_default_sort = ('issued_at', True)
     list_template = 'admin/pair_list.html'
     details_template = 'admin/pair_details.html'
 
