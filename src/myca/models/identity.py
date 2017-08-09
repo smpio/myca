@@ -10,7 +10,7 @@ class Identity(db.Model):
     issuer_id = db.Column(db.Integer, db.ForeignKey('identity.id'), nullable=True)
     issuer = db.relationship('Identity', remote_side=id)
 
-    name = db.Column(db.String(255), unique=True, nullable=False)
+    name = db.Column(db.String(255), nullable=False)
 
     __table_args__ = (
         UniqueConstraint('issuer_id', 'name', name='_issuer_name_uc'),
