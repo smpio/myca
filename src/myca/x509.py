@@ -191,7 +191,7 @@ def load_certificate_info(pair, reissue=False):
         pass
     else:
         info.san_dns_names = alt_names.get_values_for_type(x509.DNSName)
-        info.san_ips = alt_names.get_values_for_type(x509.IPAddress)
+        info.san_ips = [str(ip) for ip in alt_names.get_values_for_type(x509.IPAddress)]
 
     return info
 
